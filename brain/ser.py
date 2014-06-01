@@ -1,20 +1,19 @@
-#!/usr/bin/env python2.7
+#! /usr/bin/env python2.7
 import sys, os, serial, threading
+import string
 from string import strip
+from time import time
 try:
-    from serial.tools.list_ports import comports
+    from serial.tools.list_ports import ports
 except ImportError:
     comports = None
 
-DEFAULT_PORT = None
-DEFAULT_BAUDRATE = 9600
-DEFAULT_RTS = None
-DEFAULT_DTR = None
+cache = str(time()) + '#' + '0'
 
 
 class serers(object):
 
-    def __init__(self, port, baudrate):
+    def __init__(self,port='/dev/tty.usbmodem1411', baudrate=115200):
         try:
             self.ser = serial.Serial()
             self.ser.port = port
@@ -22,38 +21,45 @@ class serers(object):
             if not self.ser.isOpen():
                 self.ser.open()
             self.start()
-        except serial.SerialException:
+        except Exception:
             raise
 
     def start(self):
         self.alive = True
         try:
             self._start_reader()
-            #self._start_writer()
         except threading.ThreadError:
             raise
 
     def _start_reader(self):
-        self._reader_alive = True
-        self.reader_thread = threading.Thread(target=self.reader,)
-        self.reader_thread.setDaemon(False)
-        self.reader_thread.start()
-
-    def _start_writer(self):
-        self._writer_alive = True
-        self._writer_thread = threading.Thread(target=self.writer)
-        self._writer_thread.setDaemon(True)
-        self.reader_thread.start()
-
-    def reader(self):
+        global cache
         try:
-            while self.alive and self._reader_alive:
-                self.text = self.ser.readline()
-        except serial.SerialException:
+            self._reader_alive = True
+            self.reader_thread = threading.Thread(target = self.reader)
+            self.reader_thread.setDaemon(False)
+            self.reader_thread.start()
+        except KeyboardInterrupt:
             raise
 
+    def reader(self):
+        global cache
+        try:
+            ptime = time()
+            while self.alive and self._start_reader:
+                self.text = self.ser.readline()
+                cache = (str(time())+'#'+self.text)
+        except serial.SerialException, KeyboardInterrupt:
+            self.alive = False
+            raise
 
-if __name__ == '__main__':
-    port = '/dev/tty.usbmodem1411'
-    baudrate = 115200
-    serers(port,baudrate)
+    def get(self):
+        global cache
+        try:
+            #cache = str(time())+'#'+'0'
+            ptime, sound = cache.split('#')
+            if time() - string.atof(ptime) < 1:
+                return (string.atoi(sound) + 70000)/20000
+            else:
+                return '0'
+        except Exception:
+            raise
