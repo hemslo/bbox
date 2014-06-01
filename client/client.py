@@ -31,9 +31,9 @@ class Client(object):
 
     def __init__(self):
         pygame.mixer.init()
+        pygame.mixer.set_num_channels(24)
         audios = ['Do', 'Re', 'Mi', 'Fa', 'So', 'La', 'Si']
         self.musics = [pygame.mixer.Sound(n + '.wav') for n in audios]
-        self.session = requests.Session()
 
     def play(self, index):
         pygame.mixer.find_channel().queue(self.musics[index])
