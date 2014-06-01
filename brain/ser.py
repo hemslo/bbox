@@ -1,5 +1,6 @@
 #! /usr/bin/env python2.7
 import sys, os, serial, threading
+import string
 from string import strip
 from time import time
 try:
@@ -7,12 +8,12 @@ try:
 except ImportError:
     comports = None
 
-cache = []
+cache = str(time()) + '#' + '0'
 
 
 class serers(object):
 
-    def __init__(self,port='/dev/tty.submodem1411', baudrate=115200):
+    def __init__(self,port='/dev/tty.usbmodem1411', baudrate=115200):
         try:
             self.ser = serial.Serial()
             self.ser.port = port
@@ -24,7 +25,6 @@ class serers(object):
             raise
 
     def start(self):
-        global cahce
         self.alive = True
         try:
             self._start_reader()
@@ -44,16 +44,22 @@ class serers(object):
     def reader(self):
         global cache
         try:
+            ptime = time()
             while self.alive and self._start_reader:
                 self.text = self.ser.readline()
-                cache.append(str(time())+'#'+self.text)
+                cache = (str(time())+'#'+self.text)
         except serial.SerialException, KeyboardInterrupt:
+            self.alive = False
             raise
 
     def get(self):
         global cache
         try:
-            return cache.pop()
+            #cache = str(time())+'#'+'0'
+            ptime, sound = cache.split('#')
+            if time() - string.atof(ptime) < 1:
+                return (string.atoi(sound) + 70000)/20000
+            else:
+                return '0'
         except Exception:
-            return '0'
-
+            raise

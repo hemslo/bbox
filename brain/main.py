@@ -19,5 +19,5 @@ if __name__ == "__main__":
   application = tornado.web.Application([
       (r"/get", MainHandler),
     ],**settings)
-  application.listen(80)
+  application.listen(8090)
   tornado.ioloop.IOLoop.instance().start()
